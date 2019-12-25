@@ -16,9 +16,14 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.ListView;
+import android.widget.SimpleAdapter;
+
+import java.util.HashMap;
+import java.util.LinkedList;
 
 public class MainActivity extends AppCompatActivity {
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
 
     private BluetoothAdapter bluetoothAdapter;
     private void init(){
+        initListView();
         myBTReceiver = new MyBTReceiver();
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (!bluetoothAdapter.isEnabled()) {
@@ -66,12 +72,22 @@ public class MainActivity extends AppCompatActivity {
     private void discoverBTDevice(){
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(myBTReceiver, filter);
+        scanBTDevice(null);
 
-        bluetoothAdapter.startDiscovery();
 
     }
 
+    public void scanBTDevice(View view){
+        devices.clear();
+        bluetoothAdapter.startDiscovery();
+    }
+
+    public void stopScanBTDevice(View view) {
+        bluetoothAdapter.cancelDiscovery();
+    }
+
     private MyBTReceiver myBTReceiver;
+
 
     private class MyBTReceiver extends BroadcastReceiver {
         @Override
@@ -81,7 +97,30 @@ public class MainActivity extends AppCompatActivity {
             String deviceMAC = device.getAddress(); // MAC address
 
             Log.v("brad", deviceName + ":" + deviceMAC);
+
+            HashMap<String,String> data = new HashMap<>();
+            data.put(from[0], deviceName);
+            data.put(from[1], deviceMAC);
+            if (!devices.contains(data)) {
+                devices.add(data);
+                adapter.notifyDataSetChanged();
+            }
+
         }
     }
+
+    private ListView listDevice;
+    private LinkedList<HashMap<String,String>> devices = new LinkedList<>();
+    private SimpleAdapter adapter;
+    private String[] from = {"name", "mac"};
+    private int[] to = {R.id.deviceName, R.id.deviceMAC};
+
+
+    private void initListView(){
+        listDevice = findViewById(R.id.listDevices);
+        adapter = new SimpleAdapter(this, devices, R.layout.item_device, from, to);
+        listDevice.setAdapter(adapter);
+    }
+
 
 }
