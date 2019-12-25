@@ -20,6 +20,13 @@ import android.view.View;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
+import com.inuker.bluetooth.library.BluetoothClient;
+import com.inuker.bluetooth.library.beacon.Beacon;
+import com.inuker.bluetooth.library.search.SearchRequest;
+import com.inuker.bluetooth.library.search.SearchResult;
+import com.inuker.bluetooth.library.search.response.SearchResponse;
+import com.inuker.bluetooth.library.utils.BluetoothLog;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -49,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
 
     private BluetoothAdapter bluetoothAdapter;
     private void init(){
+        mClient = new BluetoothClient(this);
         initListView();
         myBTReceiver = new MyBTReceiver();
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -71,15 +79,50 @@ public class MainActivity extends AppCompatActivity {
 
     private void discoverBTDevice(){
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        registerReceiver(myBTReceiver, filter);
-        scanBTDevice(null);
+        //registerReceiver(myBTReceiver, filter);
+        //scanBTDevice(null);
 
 
     }
 
     public void scanBTDevice(View view){
         devices.clear();
-        bluetoothAdapter.startDiscovery();
+        //bluetoothAdapter.startDiscovery();
+
+        SearchRequest request = new SearchRequest.Builder()
+                .searchBluetoothLeDevice(3000, 3)   // 先扫BLE设备3次，每次3s
+                .searchBluetoothClassicDevice(5000) // 再扫经典蓝牙5s
+                .searchBluetoothLeDevice(2000)      // 再扫BLE设备2s
+                .build();
+        mClient.search(request, new SearchResponse() {
+            @Override
+            public void onSearchStarted() {
+
+            }
+
+            @Override
+            public void onDeviceFounded(SearchResult device) {
+                //Beacon beacon = new Beacon(device.scanRecord);
+                //BluetoothLog.v(String.format("beacon for %s\n%s", device.getAddress(), beacon.toString()));
+                HashMap<String,String> data = new HashMap<>();
+                data.put(from[0], device.getName());
+                data.put(from[1], device.getAddress());
+                if (!devices.contains(data)) {
+                    devices.add(data);
+                    adapter.notifyDataSetChanged();
+                }
+            }
+
+            @Override
+            public void onSearchStopped() {
+
+            }
+
+            @Override
+            public void onSearchCanceled() {
+
+            }
+        });
     }
 
     public void stopScanBTDevice(View view) {
@@ -121,6 +164,11 @@ public class MainActivity extends AppCompatActivity {
         adapter = new SimpleAdapter(this, devices, R.layout.item_device, from, to);
         listDevice.setAdapter(adapter);
     }
+
+    BluetoothClient mClient;
+
+
+
 
 
 }
