@@ -17,11 +17,14 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
 import com.inuker.bluetooth.library.BluetoothClient;
 import com.inuker.bluetooth.library.beacon.Beacon;
+import com.inuker.bluetooth.library.connect.response.BleConnectResponse;
+import com.inuker.bluetooth.library.model.BleGattProfile;
 import com.inuker.bluetooth.library.search.SearchRequest;
 import com.inuker.bluetooth.library.search.SearchResult;
 import com.inuker.bluetooth.library.search.response.SearchResponse;
@@ -29,6 +32,8 @@ import com.inuker.bluetooth.library.utils.BluetoothLog;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+
+import static com.inuker.bluetooth.library.Constants.REQUEST_SUCCESS;
 
 public class MainActivity extends AppCompatActivity {
     @Override
@@ -86,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void scanBTDevice(View view){
-        devices.clear();
+        devices.clear(); //btdevices.clear();
         //bluetoothAdapter.startDiscovery();
 
         SearchRequest request = new SearchRequest.Builder()
@@ -109,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
                 data.put(from[1], device.getAddress());
                 if (!devices.contains(data)) {
                     devices.add(data);
+                    //btdevices.add(device.device);
                     adapter.notifyDataSetChanged();
                 }
             }
@@ -154,6 +160,7 @@ public class MainActivity extends AppCompatActivity {
 
     private ListView listDevice;
     private LinkedList<HashMap<String,String>> devices = new LinkedList<>();
+    //private LinkedList<BluetoothDevice> btdevices = new LinkedList<>();
     private SimpleAdapter adapter;
     private String[] from = {"name", "mac"};
     private int[] to = {R.id.deviceName, R.id.deviceMAC};
@@ -163,7 +170,30 @@ public class MainActivity extends AppCompatActivity {
         listDevice = findViewById(R.id.listDevices);
         adapter = new SimpleAdapter(this, devices, R.layout.item_device, from, to);
         listDevice.setAdapter(adapter);
+
+        listDevice.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Log.v("brad", "debug");
+                connectDevice(devices.get(position).get(from[1]));
+            }
+        });
+
+
     }
+
+    private void connectDevice(String mac){
+        mClient.connect(mac, new BleConnectResponse() {
+            @Override
+            public void onResponse(int code, BleGattProfile profile) {
+                Log.v("brad", "OK1");
+                if (code == REQUEST_SUCCESS) {
+                    Log.v("brad", "OK");
+                }
+            }
+        });
+    }
+
 
     BluetoothClient mClient;
 
