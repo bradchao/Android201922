@@ -24,6 +24,7 @@ import android.widget.SimpleAdapter;
 import com.inuker.bluetooth.library.BluetoothClient;
 import com.inuker.bluetooth.library.beacon.Beacon;
 import com.inuker.bluetooth.library.connect.response.BleConnectResponse;
+import com.inuker.bluetooth.library.connect.response.BleNotifyResponse;
 import com.inuker.bluetooth.library.model.BleGattProfile;
 import com.inuker.bluetooth.library.search.SearchRequest;
 import com.inuker.bluetooth.library.search.SearchResult;
@@ -165,6 +166,7 @@ public class MainActivity extends AppCompatActivity {
     private SimpleAdapter adapter;
     private String[] from = {"name", "mac"};
     private int[] to = {R.id.deviceName, R.id.deviceMAC};
+    private String mac;
 
 
     private void initListView(){
@@ -176,14 +178,15 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Log.v("brad", "debug");
-                connectDevice(devices.get(position).get(from[1]));
+                mac = devices.get(position).get(from[1]);
+                connectDevice(mac);
             }
         });
 
 
     }
 
-    private void connectDevice(String mac){
+    private void connectDevice(final String mac){
 
         mClient.connect(mac, new BleConnectResponse() {
             @Override
@@ -191,25 +194,55 @@ public class MainActivity extends AppCompatActivity {
                 Log.v("brad", "OK1");
                 if (code == REQUEST_SUCCESS) {
                     Log.v("brad", "OK");
+                    setNotify(mac);
                 }
             }
         });
     }
 
 
-    private void setNotify(){
+    private void setNotify(String mac){
+        Log.v("brad", "mac = " +mac);
         String sUUID = "0000180f-0000-1000-8000-00805f9b34fb";
         String cUUID = "00002a19-0000-1000-8000-00805f9b34fb";
 
         UUID serviceUUID = UUID.fromString(sUUID);
         UUID charUUID = UUID.fromString(cUUID);
 
+        mClient.notify(mac, serviceUUID, charUUID, new BleNotifyResponse() {
+            @Override
+            public void onNotify(UUID service, UUID character, byte[] value) {
+                for (byte v : value){
+                    Log.v("brad", "send => " + v);
+                }
+            }
 
+            @Override
+            public void onResponse(int code) {
+                Log.v("brad", "code = " + code);
+                if (code == REQUEST_SUCCESS) {
+                    Log.v("brad", "notify OK");
+                }
+            }
+        });
 
 
 
     }
 
+
+    @Override
+    public void finish() {
+        if (mClient != null){
+            mClient.disconnect(mac);
+        }
+
+
+        super.finish();
+
+
+
+    }
 
     BluetoothClient mClient;
 
