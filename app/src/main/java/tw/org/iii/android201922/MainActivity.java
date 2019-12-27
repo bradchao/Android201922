@@ -32,6 +32,7 @@ import com.inuker.bluetooth.library.utils.BluetoothLog;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.UUID;
 
 import static com.inuker.bluetooth.library.Constants.REQUEST_SUCCESS;
 
@@ -183,6 +184,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void connectDevice(String mac){
+
         mClient.connect(mac, new BleConnectResponse() {
             @Override
             public void onResponse(int code, BleGattProfile profile) {
@@ -192,6 +194,20 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+
+    private void setNotify(){
+        String sUUID = "0000180f-0000-1000-8000-00805f9b34fb";
+        String cUUID = "00002a19-0000-1000-8000-00805f9b34fb";
+
+        UUID serviceUUID = UUID.fromString(sUUID);
+        UUID charUUID = UUID.fromString(cUUID);
+
+
+
+
+
     }
 
 
